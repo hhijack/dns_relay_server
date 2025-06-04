@@ -2,7 +2,7 @@
 
 这是一个简单的 DNS 中继服务器，支持 Windows 平台。你可以通过配置文件设置本地静态 DNS 映射（A记录和PTR记录），对于未匹配的查询将转发至外部 DNS 服务器（默认为阿里云公共DNS：223.5.5.5）。
 
-##  功能特性
+## ? 功能特性
 
 - **本地 DNS 解析**
     - 支持 A 记录（正向解析）
@@ -21,7 +21,7 @@
 
 ---
 
-##  配置文件说明
+## ? 配置文件说明
 
 ### 1. 配置文件路径
 
@@ -71,7 +71,7 @@ PTR=1.0.0.127.in-addr.arpa, Domain=localhost
 
 ---
 
-##  编译构建
+## ?? 编译构建
 
 本项目使用 CMake 构建系统：
 
@@ -95,7 +95,7 @@ cmake --build .
 
 ---
 
-##  运行环境准备
+## ? 运行环境准备
 
 ### 系统要求（Windows）
 
@@ -112,7 +112,7 @@ cmake --build .
 
 ---
 
-##  启动服务
+## ? 启动服务
 
 ```bash
 dns_relay_server.exe
@@ -131,7 +131,7 @@ Loaded from file: Type=PTR, Key=1.0.0.127.in-addr.arpa, Value=localhost
 
 ---
 
-##  测试方法
+## ? 测试方法
 
 使用 [nslookup](file://F:\c_clion\c_project\dns_relay_server\cmake-build-debug\nslookup) 测试 DNS 解析：
 ```bash
@@ -144,13 +144,13 @@ nslookup 1.0.0.127.in-addr.arpa 127.0.0.1
 
 ---
 
-##  停止服务
+## ? 停止服务
 
 按下 `Ctrl+C` 即可停止服务。
 
 ---
 
-##  常见问题排查
+## ? 常见问题排查
 
 ### 端口被占用
 ```bash
@@ -167,7 +167,7 @@ netstat -ano | findstr :53
 
 ---
 
-##  源码结构说明
+## ? 源码结构说明
 
 | 文件 | 说明 |
 |------|------|
@@ -206,7 +206,7 @@ forwarder.c
 ```
 ---
 
-##  示例输出日志
+## ? 示例输出日志
 
 ```
 DNS Relay Server running on port 53...
@@ -224,7 +224,7 @@ Forwarded external response (ID: 3) to 127.0.0.1:54323
 
 ---
 
-##  注意事项
+## ? 注意事项
 
 - 需要管理员权限才能绑定 53 端口
 - 如需修改外部 DNS 地址，请修改 `common.h` 中的 `EXTERNAL_DNS_SERVER`
@@ -232,7 +232,7 @@ Forwarded external response (ID: 3) to 127.0.0.1:54323
 
 ---
 
-##  建议操作流程
+## ? 建议操作流程
 
 1. 修改 `dnsrelay.txt` 添加自己的映射规则
 2. 管理员身份打开 CMD，进入构建目录
