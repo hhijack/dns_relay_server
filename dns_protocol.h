@@ -19,10 +19,6 @@ typedef struct {
     uint16_t qclass; // 查询类
 } DNSQuestionTail;
 
-// 从IP字符串 "a.b.c.d" 生成 PTR 查询名 "d.c.b.a.in-addr.arpa"
-// 或者如果输入已经是 "x.in-addr.arpa" 格式，则直接复制。
-int extract_ptr_query(const char* ip_str_or_ptr_domain, char* reversed_ip_out, size_t reversed_ip_len);
-
 int extract_domain_from_query(const unsigned char* dns_msg, int msg_len,
                               char* domain_out, int domain_out_max_len,
                               int* qname_len_in_msg);
@@ -51,8 +47,6 @@ void send_nodata_response(SOCKET_TYPE sockfd, uint16_t original_id,
                           uint16_t qtype, // The original qtype (e.g., AAAA)
                           const struct sockaddr_in* client_addr, socklen_t client_addr_len);
 
-// void set_upstream_server_info(unsigned char* response, int response_len, const char* upstream_server);
-// ^ 此函数的原始实现（修改响应包）存在问题。
-// 已更改为仅在调用时打印信息，或其调用点在forwarder.c中被注释掉。
+
 
 #endif // DNS_PROTOCOL_H
