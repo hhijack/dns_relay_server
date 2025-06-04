@@ -1,12 +1,12 @@
 //dns_cache.c
 #include "dns_cache.h"
-#include <stdio.h> // È·±£°üº¬stdio.hÒÔÊ¹ÓÃprintf/fprintf/FILEÏà¹Øº¯Êı
+#include <stdio.h> // ç¡®ä¿åŒ…å«stdio.hä»¥ä½¿ç”¨printf/fprintf/FILEç›¸å…³å‡½æ•°
 
-// DNS»º´æ±íÊµÏÖ
-static DNSEntry dns_table[MAX_DNS_ENTRIES]; // DNS»º´æ±í
-static int dns_table_size = 0;              // DNS±íµ±Ç°´óĞ¡
+// DNSç¼“å­˜è¡¨å®ç°
+static DNSEntry dns_table[MAX_DNS_ENTRIES]; // DNSç¼“å­˜è¡¨
+static int dns_table_size = 0;              // DNSè¡¨å½“å‰å¤§å°
 
-// ¼ÓÔØDNS±íÊı¾İ
+// åŠ è½½DNSè¡¨æ•°æ®
 void load_dns_table(const char* filename) {
     FILE* fp = fopen(filename, "r");
     if(!fp) {
@@ -16,8 +16,8 @@ void load_dns_table(const char* filename) {
 
     char line[512];
     while(fgets(line, sizeof(line), fp)) {
-        line[strcspn(line, "\r\n")] = 0; // ÒÆ³ı»»ĞĞ·û
-        if(line[0] == '#' || line[0] == '\0' || isspace(line[0])) continue; // Ìø¹ı×¢ÊÍºÍ¿ÕĞĞ
+        line[strcspn(line, "\r\n")] = 0; // ç§»é™¤æ¢è¡Œç¬¦
+        if(line[0] == '#' || line[0] == '\0' || isspace(line[0])) continue; // è·³è¿‡æ³¨é‡Šå’Œç©ºè¡Œ
 
         char record_type_str[4], key_str[256], value_str[256];
         if(sscanf(line, "%3[^=]=%255[^,], Domain=%255s", record_type_str, key_str, value_str) == 3) {
@@ -26,16 +26,16 @@ void load_dns_table(const char* filename) {
                 dns_table[dns_table_size].record_type = type;
 
                 if (type == A_RECORD) {
-                    // ¶ÔÓÚA¼ÇÂ¼£ºkey_strÊÇIPµØÖ·£¬value_strÊÇÓòÃû
-                    // DNSEntry.ip´æ´¢IPµØÖ·£¬DNSEntry.domain´æ´¢ÓòÃû
+                    // å¯¹äºAè®°å½•ï¼škey_stræ˜¯IPåœ°å€ï¼Œvalue_stræ˜¯åŸŸå
+                    // DNSEntry.ipå­˜å‚¨IPåœ°å€ï¼ŒDNSEntry.domainå­˜å‚¨åŸŸå
                     strncpy(dns_table[dns_table_size].ip, key_str, sizeof(dns_table[dns_table_size].ip) - 1);
                     dns_table[dns_table_size].ip[sizeof(dns_table[dns_table_size].ip) - 1] = '\0';
                     strncpy(dns_table[dns_table_size].domain, value_str, sizeof(dns_table[dns_table_size].domain) - 1);
                     dns_table[dns_table_size].domain[sizeof(dns_table[dns_table_size].domain) - 1] = '\0';
                 } else { // PTR_RECORD
-                    // ¶ÔÓÚPTR¼ÇÂ¼£ºkey_strÊÇ"x.x.x.x.in-addr.arpa"£¬value_strÊÇ"Ö÷»úÃû"
-                    // DNSEntry.domain´æ´¢"x.x.x.x.in-addr.arpa"£¨²éÕÒ¼ü£©
-                    // DNSEntry.ip´æ´¢"Ö÷»úÃû"£¨½á¹û£¬±ØĞëÊÊºÏip[16]£©
+                    // å¯¹äºPTRè®°å½•ï¼škey_stræ˜¯"x.x.x.x.in-addr.arpa"ï¼Œvalue_stræ˜¯"ä¸»æœºå"
+                    // DNSEntry.domainå­˜å‚¨"x.x.x.x.in-addr.arpa"ï¼ˆæŸ¥æ‰¾é”®ï¼‰
+                    // DNSEntry.ipå­˜å‚¨"ä¸»æœºå"ï¼ˆç»“æœï¼Œå¿…é¡»é€‚åˆip[16]ï¼‰
                     strncpy(dns_table[dns_table_size].domain, key_str, sizeof(dns_table[dns_table_size].domain) - 1);
                     dns_table[dns_table_size].domain[sizeof(dns_table[dns_table_size].domain) - 1] = '\0';
                     strncpy(dns_table[dns_table_size].ip, value_str, sizeof(dns_table[dns_table_size].ip) - 1);
@@ -53,7 +53,7 @@ void load_dns_table(const char* filename) {
         } else {
             char ip_str[16] = {0};
             char domain_str[256] = {0};
-            if(sscanf(line, "%15s %255s", ip_str, domain_str) == 2) { // ¼æÈİ¾É¸ñÊ½ (A¼ÇÂ¼)
+            if(sscanf(line, "%15s %255s", ip_str, domain_str) == 2) { // å…¼å®¹æ—§æ ¼å¼ (Aè®°å½•)
                 if(dns_table_size < MAX_DNS_ENTRIES) {
                     dns_table[dns_table_size].record_type = A_RECORD;
                     strncpy(dns_table[dns_table_size].ip, ip_str, sizeof(dns_table[dns_table_size].ip)-1);
@@ -74,17 +74,17 @@ void load_dns_table(const char* filename) {
     fclose(fp);
 }
 
-// ÔÚDNS±íÖĞ²éÕÒÌõÄ¿
+// åœ¨DNSè¡¨ä¸­æŸ¥æ‰¾æ¡ç›®
 DNSEntry* find_in_dns_table(const char* key, RecordType type) {
     for(int i = 0; i < dns_table_size; i++) {
         if(dns_table[i].record_type == type) {
             if (type == A_RECORD) {
-                // ¶ÔÓÚA¼ÇÂ¼£¬keyÊÇÓòÃû£¬Óëentry.domain±È½Ï
+                // å¯¹äºAè®°å½•ï¼Œkeyæ˜¯åŸŸåï¼Œä¸entry.domainæ¯”è¾ƒ
                 if (strcmp(dns_table[i].domain, key) == 0) {
                     return &dns_table[i];
                 }
             } else { // PTR_RECORD
-                // ¶ÔÓÚPTR¼ÇÂ¼£¬keyÊÇ"x.x.x.x.in-addr.arpa"£¬Óëentry.domain£¨´æ´¢Î»ÖÃ£©±È½Ï
+                // å¯¹äºPTRè®°å½•ï¼Œkeyæ˜¯"x.x.x.x.in-addr.arpa"ï¼Œä¸entry.domainï¼ˆå­˜å‚¨ä½ç½®ï¼‰æ¯”è¾ƒ
                 if (strcmp(dns_table[i].domain, key) == 0) {
                     return &dns_table[i];
                 }
@@ -94,7 +94,7 @@ DNSEntry* find_in_dns_table(const char* key, RecordType type) {
     return NULL;
 }
 
-// »ñÈ¡DNS±í´óĞ¡
+// è·å–DNSè¡¨å¤§å°
 int get_dns_table_size() {
     return dns_table_size;
 }
