@@ -3,17 +3,17 @@
 
 #include "common.h"
 
-// DNS报文头部结构 (网络字节序)
+// DNS报文头部结构(网络字节序)
 typedef struct {
     uint16_t id;      // 事务ID
     uint16_t flags;   // 标志字段
-    uint16_t qdcount; // 问题数量
-    uint16_t ancount; // 回答数量
-    uint16_t nscount; // 授权记录数量
-    uint16_t arcount; // 附加记录数量
+    uint16_t qdcount; // 问题记录数
+    uint16_t ancount; // 回答记录数
+    uint16_t nscount; // 授权记录数
+    uint16_t arcount; // 附加记录数
 } DNSHeader;
 
-// DNS 查询问题尾部 (QNAME是变长的)
+// DNS查询问题尾部(QNAME是变长的)
 typedef struct {
     uint16_t qtype;  // 查询类型
     uint16_t qclass; // 查询类

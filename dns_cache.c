@@ -1,20 +1,20 @@
 #include "dns_cache.h"
 
-// ???????????????????????
-static DNSEntry dns_table[MAX_DNS_ENTRIES]; // DNS??
-static int dns_table_size = 0;              // DNS????С
+// DNS缓存表实现
+static DNSEntry dns_table[MAX_DNS_ENTRIES]; // DNS缓存表
+static int dns_table_size = 0;              // DNS表当前大小
 
 void load_dns_table(const char* filename) {
     FILE* fp = fopen(filename, "r");
     if(!fp) {
-        printf("Warning: DNS table file '%s' not found or cannot be opened. Starting with an empty table.\n", filename);
+        printf("Warning: Unable to open DNS table file '%s'. Starting with empty table.\n", filename);
         return;
     }
 
     char line[512];
     while(fgets(line, sizeof(line), fp)) {
-        line[strcspn(line, "\r\n")] = 0; // Remove newline characters
-        if(line[0] == '#' || line[0] == '\0' || isspace(line[0])) continue; // Skip comments and empty lines
+        line[strcspn(line, "\r\n")] = 0; // 移除换行符
+        if(line[0] == '#' || line[0] == '\0' || isspace(line[0])) continue; // 跳过注释和空行
 
         // 修改解析逻辑支持PTR记录
         char record_type_str[4], key_str[256], value_str[256];
@@ -38,11 +38,11 @@ void load_dns_table(const char* filename) {
                 printf("Loaded from file: IP=%s, Domain=%s\n", dns_table[dns_table_size].ip, dns_table[dns_table_size].domain);
                 dns_table_size++;
             } else {
-                fprintf(stderr, "DNS table full, cannot load more entries.\n");
+                fprintf(stderr, "Error: DNS table is full, cannot load more entries.\n");
                 break;
             }
         } else {
-            fprintf(stderr, "Warning: Malformed line in %s: %s\n", filename, line);
+            fprintf(stderr, "Warning: Malformed line in %s file: %s\n", filename, line);
         }
     }
     fclose(fp);

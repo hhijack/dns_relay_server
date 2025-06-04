@@ -1,14 +1,14 @@
 #include "common.h"
 #include "dns_cache.h"
-#include "request_handler.h" // For RequestInfo and handle_request
+#include "request_handler.h" // ����RequestInfo��handle_request
 #include "dns_protocol.h"
 
 
-// Global variable for the main listening socket (as in original)
-// If we wanted to avoid this, it would need to be passed into handle_request,
-// but since handle_request calls other functions that need it,
-// it's passed via RequestInfo.
-// SOCKET_TYPE main_sockfd; // This is now local to main and passed via RequestInfo
+// �������׽��ֵ�ȫ�ֱ���(��ԭ����ͬ)
+// ����������ʹ��ȫ�ֱ�������Ҫ���䴫�ݸ�handle_request
+// ������handle_request������������Ҫ���ĺ���
+// ����ͨ��RequestInfo�ṹ�崫��
+// SOCKET_TYPE main_sockfd; // ������Ϊmain�ľֲ�������ͨ��RequestInfo����
 
 int main() {
 #ifdef _WIN32
@@ -20,9 +20,9 @@ int main() {
 #endif
 
     load_dns_table("dnsrelay.txt");
-    srand(time(NULL)); // Seed random number generator (not used in current code but good practice)
+    srand(time(NULL)); // ��ʼ��������������(��ǰ����δʹ�õ���Ϊ����ʵ������)
 
-    SOCKET_TYPE local_main_sockfd; // Use a local variable for main_sockfd
+    SOCKET_TYPE local_main_sockfd; // ʹ�þֲ������洢���׽���
 
     local_main_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 #ifdef _WIN32
@@ -40,8 +40,8 @@ int main() {
     struct sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = INADDR_ANY; // Listen on all available interfaces
-    servaddr.sin_port = htons(53);         // DNS port
+    servaddr.sin_addr.s_addr = INADDR_ANY; // �������п��������ӿ�
+    servaddr.sin_port = htons(53);         // DNS��׼�˿�
 
 #ifdef _WIN32
     if(bind(local_main_sockfd, (const struct sockaddr*)&servaddr, sizeof(servaddr)) == SOCKET_ERROR) {
@@ -62,16 +62,16 @@ int main() {
         RequestInfo* info = malloc(sizeof(RequestInfo));
         if (!info) {
             perror("Failed to allocate memory for request info");
-            // Potentially sleep to avoid busy-looping on allocation failure
+            // ���������Ա�������ʧ��ʱ��æ�ȴ�
 #ifdef _WIN32
             Sleep(100);
 #else
             usleep(100000);
 #endif
-            continue; // Avoid exiting the server for one failed allocation
+            continue; // ������һ�η���ʧ�ܾ��˳�������
         }
         info->client_addr_len = sizeof(info->client_addr);
-        info->server_sockfd = local_main_sockfd; // Pass the listening socket to the handler
+        info->server_sockfd = local_main_sockfd; // �������׽��ִ��ݸ���������
 
         info->len = recvfrom(local_main_sockfd, (char*)info->buffer, DNS_BUFFER_SIZE, 0,
                              (struct sockaddr*)&(info->client_addr), &(info->client_addr_len));
@@ -86,7 +86,7 @@ int main() {
             continue;
         }
 
-        if (info->len < sizeof(DNSHeader)) { // Basic check for minimum DNS packet size
+        if (info->len < (int)sizeof(DNSHeader)) { // ��������DNS���ݰ���С����
             fprintf(stderr, "Received packet too small for DNS header (%d bytes).\n", info->len);
             free(info);
             continue;

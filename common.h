@@ -33,11 +33,11 @@
 #define MAX_DNS_ENTRIES 1000
 #define DNS_BUFFER_SIZE 512
 #define EXTERNAL_DNS_SERVER "223.5.5.5" // 阿里DNS
-#define FORWARD_TIMEOUT_SEC 2           // 转发查询超时时间
-#define MAX_RETRIES 2                   // 转发重试次数
+#define FORWARD_TIMEOUT_SEC 2           // 转发查询超时时间(秒)
+#define MAX_RETRIES 2                   // 最大重试次数
 #define MAX_UPSTREAM_INFO_LEN 64        // 上游服务器信息最大长度
 
-// Function to set upstream server info in DNS response
+// 在DNS响应中设置上游服务器信息
 void set_upstream_server_info(unsigned char* response, int response_len, const char* upstream_server);
 
 #endif // COMMON_H
