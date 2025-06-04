@@ -11,13 +11,12 @@
 // SOCKET_TYPE main_sockfd; // 改为main函数的局部变量，通过RequestInfo传递
 
 int main() {
-#ifdef _WIN32
+
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         printf("WSAStartup failed. Error Code: %d\n", GET_LAST_ERROR);
         return 1;
     }
-#endif
 
     load_dns_table("dnsrelay.txt");
     srand(time(NULL)); // 初始化随机数生成器(当前代码未使用，为后续扩展保留)
@@ -25,15 +24,13 @@ int main() {
     SOCKET_TYPE local_main_sockfd; // 使用局部变量存储套接字
 
     local_main_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-#ifdef _WIN32
+
     if(local_main_sockfd == INVALID_SOCKET) {
-#else
-        if(local_main_sockfd < 0) {
-#endif
+
         perror("socket creation failed");
-#ifdef _WIN32
+
         WSACleanup();
-#endif
+
         exit(EXIT_FAILURE);
     }
 
@@ -43,17 +40,14 @@ int main() {
     servaddr.sin_addr.s_addr = INADDR_ANY; // 监听所有网络接口
     servaddr.sin_port = htons(53);         // DNS标准端口
 
-#ifdef _WIN32
     if(bind(local_main_sockfd, (const struct sockaddr*)&servaddr, sizeof(servaddr)) == SOCKET_ERROR) {
-#else
-        if(bind(local_main_sockfd, (const struct sockaddr*)&servaddr, sizeof(servaddr)) < 0) {
-#endif
+
         printf("bind failed! Error Code: %d\n", GET_LAST_ERROR);
         perror("bind failed (确保有管理员权限绑定53端口或端口未被占用)");
         CLOSE_SOCKET(local_main_sockfd);
-#ifdef _WIN32
+
         WSACleanup();
-#endif
+
         exit(EXIT_FAILURE);
     }
 
@@ -63,11 +57,8 @@ int main() {
         if (!info) {
             perror("Failed to allocate memory for request info");
             // 内存分配失败时短暂等待
-#ifdef _WIN32
             Sleep(100);
-#else
-            usleep(100000);
-#endif
+
             continue; // 不要因为一次分配失败就退出程序
         }
         info->client_addr_len = sizeof(info->client_addr);
@@ -75,11 +66,9 @@ int main() {
 
         info->len = recvfrom(local_main_sockfd, (char*)info->buffer, DNS_BUFFER_SIZE, 0,
                              (struct sockaddr*)&(info->client_addr), &(info->client_addr_len));
-#ifdef _WIN32
+
         if(info->len == SOCKET_ERROR) {
-#else
-            if(info->len < 0) {
-#endif
+
             perror("recvfrom failed");
             free(info);
             // 可以添加休眠或更详细的日志记录
@@ -102,8 +91,8 @@ int main() {
     }
 
     CLOSE_SOCKET(local_main_sockfd);
-#ifdef _WIN32
+
     WSACleanup();
-#endif
+
     return 0;
 }
