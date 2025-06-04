@@ -1,10 +1,11 @@
+//forwarder.c
 #include "forwarder.h"
 
 void forward_to_external_dns(SOCKET_TYPE main_sockfd_param, // 客户端连接的main_sockfd
                              const unsigned char* request, int len,
                              const struct sockaddr_in* client_addr, socklen_t client_addr_len,
                              int qname_len_for_servfail,
-                             char* upstream_server_info) {
+                             char* upstream_server_info) { // upstream_server_info is now just for logging
     // 存储DNS转发服务器信息(提供给外部)
     if (upstream_server_info) {
         strncpy(upstream_server_info, EXTERNAL_DNS_SERVER, MAX_UPSTREAM_INFO_LEN);
@@ -88,10 +89,17 @@ void forward_to_external_dns(SOCKET_TYPE main_sockfd_param, // 客户端连接�
                            inet_ntoa(client_addr->sin_addr),
                            ntohs(client_addr->sin_port));
 
-                    // 响应中添加上游服务器信息
-                    if (upstream_server_info && strlen(upstream_server_info) > 0) {
-                        set_upstream_server_info(response_buffer, resp_len, upstream_server_info);
-                    }
+                    // // 响应中添加上游服务器信息 (注释掉此功能，因为它会破坏DNS包)
+                    // // set_upstream_server_info现在只打印信息，不修改包
+                    // // 但为了明确，这里的调用也注释掉，因为信息已在set_upstream_server_info内部打印
+                    // if (upstream_server_info && strlen(upstream_server_info) > 0) {
+                    //    // The function set_upstream_server_info was modified to only print.
+                    //    // If you still want that print to happen based on this call:
+                    //    // set_upstream_server_info(response_buffer, resp_len, upstream_server_info);
+                    //    // However, the upstream_server_info string is already known (EXTERNAL_DNS_SERVER)
+                    //    // So, if logging is desired here, it can be direct:
+                    //    printf("Forwarded response originated from upstream: %s\n", EXTERNAL_DNS_SERVER);
+                    // }
                 }
                 CLOSE_SOCKET(forward_sockfd);
                 return;
