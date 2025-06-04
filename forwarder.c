@@ -43,7 +43,6 @@ void forward_to_external_dns(SOCKET_TYPE main_sockfd_param, // 客户端连接�
         // 设置超时失败，继续执行
     }
 
-    // ... existing code ...
     int retries = 0;
     while (retries < MAX_RETRIES) {
         // 尝试发送请求到外部DNS
