@@ -1,53 +1,79 @@
 # dns_relay_server
-这是一个简单的 DNS 中继服务器程序，支持在 Windows 平台上运行。它可以从本地配置文件中加载域名与 IP 的映射，并根据请求返回本地定义的解析结果或转发到外部 DNS 服务器。
 
-## 准备工作
+这是一个简单的 DNS 中继服务器，支持 Windows 平台。你可以通过配置文件设置本地静态 DNS 映射（A记录和PTR记录），对于未匹配的查询将转发至外部 DNS 服务器（默认为阿里云公共DNS：223.5.5.5）。
 
-### 1. 编译环境要求
+## ? 功能特性
 
-- **Windows 系统**
-- 支持 C99 或更高版本的编译器（例如：MinGW、MSYS2、Visual Studio）
-- 需要链接 Winsock 库 (`ws2_32.lib`)
-- 如果使用 pthreads，请确保已安装 [pthreads-win32](https://sourceware.org/pthreads-win32/) 或使用 MinGW 自带的 pthread 支持
+- **本地 DNS 解析**
+    - 支持 A 记录（正向解析）
+    - 支持 PTR 记录（反向解析）
+    - 对于 IP 为 `0.0.0.0` 的 A 记录返回 NXDOMAIN 响应
+- **外部 DNS 转发**
+    - 未在本地表中找到记录时，自动转发给指定的外部 DNS 服务器
+    - 支持重试机制和超时控制
+- **多线程处理请求**
+    - 每个 DNS 请求由独立线程处理
+- **支持标准 DNS 查询类型**
+    - A (1)
+    - AAAA (28)
+    - PTR (12)
+    - 其他类型会转发
 
-### 2. 依赖库
+---
 
-- Winsock (`WS2_32.lib`)
-- pthread（线程支持）
+## ? 配置文件说明
 
-### 3. 配置文件
+### 1. 配置文件路径
 
-程序会从当前目录读取`dnsrelay.txt`配置文件，支持两种格式：
+默认从程序同目录下的 [dnsrelay.txt](file://F:\c_clion\c_project\dns_relay_server\dnsrelay.txt) 加载规则。
 
-1. 标准格式：
+> 可以通过命令行参数指定其他路径：
+```bash
+dns_relay_server.exe /path/to/dnsrelay.txt
+```
+
+
+### 2. 配置格式
+
+#### 标准 A 记录格式：
 ```
 IP地址 域名
 ```
 
-2. 扩展格式(支持PTR记录)：
+
+示例：
+```txt
+127.0.0.1 example.com
+0.0.0.0 blockedsite.com
+```
+
+
+#### 扩展格式（支持 PTR 和 A 记录）：
 ```
 RecordType=Key, Domain=Value
 ```
 
-**示例：**
-```txt
-# 标准A记录
-127.0.0.1 example.com
-0.0.0.0 blockedsite.com
 
-# PTR记录
-PTR=1.0.0.127.in-addr.arpa, Domain=localhost
+示例：
+```txt
+# 标准 A 记录
 A=114.255.40.66, Domain=www.bupt.com.cn
+
+# PTR 记录
+PTR=1.0.0.127.in-addr.arpa, Domain=localhost
 ```
 
-> 注意：
-> - 以`#`开头的行为注释行
-> - 空行将被忽略
-> - PTR记录格式为`PTR=IP.in-addr.arpa, Domain=域名`
 
-## 构建步骤
+> 注：
+> - 以 `#` 开头的行为注释
+> - 必须使用逗号分隔键值对
+> - 支持大小写敏感的 RecordType（如 `A`, `PTR`）
 
-使用CMake构建：
+---
+
+## ?? 编译构建
+
+本项目使用 CMake 构建系统：
 
 ```bash
 mkdir build && cd build
@@ -55,93 +81,165 @@ cmake ..
 cmake --build .
 ```
 
-构建选项：
-- `-DCMAKE_BUILD_TYPE=Debug` 调试版本(默认)
-- `-DCMAKE_BUILD_TYPE=Release` 发布版本
 
-支持编译器：
+### 构建选项
+- `-DCMAKE_BUILD_TYPE=Debug` —— Debug 版本（默认）
+- `-DCMAKE_BUILD_TYPE=Release` —— Release 版本
+
+### 支持编译器
 - MinGW (GCC)
 - MSVC (Visual Studio)
 
-## 运行程序
+### 构建后行为
+- 自动复制 [dnsrelay.txt](file://F:\c_clion\c_project\dns_relay_server\dnsrelay.txt) 到构建目录
 
-### 1. 运行前准备
-1. 确保已创建`dnsrelay.txt`配置文件并放在程序同目录下
-2. 关闭可能占用53端口的服务(如Windows DNS Client服务)
-3. 确保防火墙允许UDP 53端口的通信
+---
 
-### 2. 启动服务器
-由于程序绑定到DNS标准端口`53`，需要以管理员权限运行：
+## ? 运行环境准备
+
+### 系统要求（Windows）
+
+- **操作系统**: Windows 系统
+- **依赖库**:
+    - Winsock (`ws2_32.lib`)
+    - pthreads（若使用 MinGW 或 winpthreads）
+
+### 网络配置注意事项
+
+- **需要绑定 UDP 端口 53**，需管理员权限运行
+- 关闭占用 53 端口的服务（如 Windows DNS Client）
+- 确保防火墙允许该端口通信
+
+---
+
+## ? 启动服务
 
 ```bash
 dns_relay_server.exe
 ```
 
-或者指定配置文件路径：
-```bash
-dns_relay_server.exe /path/to/dnsrelay.txt
-```
 
-> 在Windows上，非管理员用户无法绑定到特权端口(如53)，因此必须：
-> 1. 右键点击终端选择"以管理员身份运行"
-> 2. 或者在快捷方式属性中设置"以管理员身份运行"
+### 查看日志输出
 
-### 3. 验证服务
-1. 检查程序输出是否显示"DNS Relay Server running on port 53..."
-2. 使用nslookup测试：
-```bash
-nslookup example.com 127.0.0.1
-nslookup 1.0.0.127.in-addr.arpa 127.0.0.1
-```
-3. 检查程序日志是否显示正确处理了查询
-
-### 4. 停止服务
-按Ctrl+C终止程序运行
-
-### 常见问题
-1. 端口占用错误：
-   - 运行`netstat -ano | findstr :53`检查端口占用
-   - 停止占用53端口的服务
-
-2. 查询无响应：
-   - 检查防火墙设置
-   - 确认配置文件格式正确
-   - 检查程序是否有错误输出
-
-## 功能说明
-
-- 本地静态DNS查询：
-  - 支持A记录和PTR记录查询
-  - 如果IP为0.0.0.0，返回NXDOMAIN错误响应
-  - 否则返回对应的A/PTR记录
-- 外部DNS查询转发：
-  - 未找到本地记录时转发到223.5.5.5
-  - 在响应中添加上游服务器信息
-- 配置文件支持标准格式和扩展格式
-
-## 注意事项
-
-- 需要管理员权限运行以绑定端口 53。
-- 若需修改外部 DNS 地址，请修改代码中的宏 `EXTERNAL_DNS_SERVER`。
-- 本程序为单线程处理每个请求（通过 pthread 创建子线程处理）。
-
-## 示例输出
-
+启动后会显示类似如下信息：
 ```
 DNS Relay Server running on port 53...
-Loaded from file: IP=127.0.0.1, Domain=example.com
-Loaded from file: IP=1.0.0.127.in-addr.arpa, Domain=localhost
-Received query for domain: example.com (ID: 12345) from 127.0.0.1:54321
-Locally resolving example.com to 127.0.0.1 (ID: 12345)
-Received query for domain: 1.0.0.127.in-addr.arpa (ID: 2) from 127.0.0.1:54322 
-Locally resolving 1.0.0.127.in-addr.arpa to localhost (ID: 2)
-Received query for domain: unknown.com (ID: 3) from 127.0.0.1:54323
-Domain not found locally, forwarding to external DNS: unknown.com
-Added upstream server info: 223.5.5.5
-Forwarded external response for ID 3 to 127.0.0.1:54323
+Loaded from file: Type=A, Key=114.255.40.66, Value=www.bupt.com.cn
+Loaded from file: Type=PTR, Key=1.0.0.127.in-addr.arpa, Value=localhost
 ```
 
 
 ---
 
-如有问题，请检查防火墙是否阻止 UDP 端口 53 的通信，或查看是否有其他 DNS 服务（如 Windows 自带的 DNS Client）占用了该端口。
+## ? 测试方法
+
+使用 [nslookup](file://F:\c_clion\c_project\dns_relay_server\cmake-build-debug\nslookup) 测试 DNS 解析：
+```bash
+nslookup example.com 127.0.0.1
+nslookup 1.0.0.127.in-addr.arpa 127.0.0.1
+```
+
+
+查看日志确认是否成功响应或转发。
+
+---
+
+## ? 停止服务
+
+按下 `Ctrl+C` 即可停止服务。
+
+---
+
+## ? 常见问题排查
+
+### 端口被占用
+```bash
+netstat -ano | findstr :53
+```
+
+如果发现有进程占用了 53 端口，请先停止相关服务。
+
+### 查询无响应
+- 确认配置文件格式正确
+- 检查是否绑定了正确的网卡地址（INADDR_ANY）
+- 使用 [nslookup](file://F:\c_clion\c_project\dns_relay_server\cmake-build-debug\nslookup) 指定 127.0.0.1 测试
+- 日志输出中查看是否出现 SERVFAIL/NXDOMAIN 错误
+
+---
+
+## ? 源码结构说明
+
+| 文件 | 说明 |
+|------|------|
+| [main.c](file://F:\c_clion\c_project\dns_relay_server\main.c) | **主程序入口文件**。负责初始化 Winsock、加载 DNS 映射表、创建监听 socket、绑定到 UDP 端口 53，并进入循环接收 DNS 请求。每次接收到请求后，会为每个请求创建一个线程来处理。主要逻辑包括：socket 初始化、权限检查、错误处理和多线程调度。 |
+| [request_handler.c](file://F:\c_clion\c_project\dns_relay_server\request_handler.c) | **DNS 请求处理核心逻辑**。包含 [handle_request()](file://F:\c_clion\c_project\dns_relay_server\request_handler.h#L14-L14) 函数，该函数运行在独立线程中，解析客户端发来的 DNS 查询请求，判断是 A 记录还是 PTR 记录查询，从本地缓存查找或转发给外部 DNS 服务器，最终构造响应返回给客户端。它调用了多个模块的功能，如协议解析、本地缓存查找、转发等。 |
+| [dns_protocol.c](file://F:\c_clion\c_project\dns_relay_server\dns_protocol.c) | **DNS 协议解析与响应构造模块**。实现 DNS 协议字段的解析、域名提取、构造标准 DNS 响应报文（A记录、PTR记录、NODATA、NXDOMAIN、SERVFAIL 等）。关键函数如 [extract_domain_from_query()](file://F:\c_clion\c_project\dns_relay_server\dns_protocol.h#L25-L27) 提取域名，[send_local_a_response()](file://F:\c_clion\c_project\dns_relay_server\dns_protocol.h#L37-L40) 构造本地 A 记录响应，[send_ptr_response()](file://F:\c_clion\c_project\dns_relay_server\dns_protocol.h#L42-L45) 构造 PTR 响应等。 |
+| [dns_cache.c](file://F:\c_clion\c_project\dns_relay_server\dns_cache.c) | **DNS 缓存管理模块**。用于加载配置文件 [dnsrelay.txt](file://F:\c_clion\c_project\dns_relay_server\dnsrelay.txt) 中定义的 DNS 映射规则，支持两种格式：标准 A 记录格式（IP + 域名）和扩展格式（`RecordType=Key, Domain=Value`），并提供 [find_in_dns_table()](file://F:\c_clion\c_project\dns_relay_server\dns_cache.h#L14-L14) 方法供其他模块查询本地映射。 |
+| [forwarder.c](file://F:\c_clion\c_project\dns_relay_server\forwarder.c) | **DNS 转发模块**。当请求的域名未在本地缓存找到时，此模块将 DNS 请求转发给指定的外部 DNS 服务器（默认为阿里云公共 DNS：223.5.5.5），并等待响应结果。支持重试机制和超时控制，并将结果回传给原始客户端。 |
+| [common.h](file://F:\c_clion\c_project\dns_relay_server\common.h) | **全局头文件**。定义了跨平台宏、常量、数据结构（如 [DNSEntry](file://F:\c_clion\c_project\dns_relay_server\dns_cache.h#L7-L11), [RequestInfo](file://F:\c_clion\c_project\dns_relay_server\request_handler.h#L6-L12), [DNSHeader](file://F:\c_clion\c_project\dns_relay_server\dns_protocol.h#L6-L13), [DNSQuestionTail](file://F:\c_clion\c_project\dns_relay_server\dns_protocol.h#L16-L19) 等）、平台兼容性适配（如 SOCKET 类型、关闭 SOCKET 的宏等），以及一些通用宏定义（如最大条目数、缓冲区大小等）。 |
+
+---
+
+### 文件依赖关系图
+```
+main.c
+├── common.h
+├── dns_cache.h
+├── request_handler.h
+├── dns_protocol.h
+
+request_handler.c
+├── common.h
+├── dns_cache.h
+├── dns_protocol.h
+├── forwarder.h
+
+dns_protocol.c
+├── common.h
+
+dns_cache.c
+├── common.h
+
+forwarder.c
+├── common.h
+├── dns_protocol.h
+```
+---
+
+## ? 示例输出日志
+
+```
+DNS Relay Server running on port 53...
+Loaded from file: Type=A, Key=114.255.40.66, Value=www.bupt.com.cn
+Received query for domain: example.com (ID: 12345) from 127.0.0.1:54321
+Locally resolving example.com to 127.0.0.1 (ID: 12345)
+Received query for domain: 1.0.0.127.in-addr.arpa (ID: 2) from 127.0.0.1:54322 
+Locally resolving 1.0.0.127.in-addr.arpa to localhost (ID: 2)
+Received query for domain: unknown.com (ID: 3) from 127.0.0.1:54323
+Domain not found locally, forwarding AAAA query: unknown.com
+Forwarded to DNS server: 223.5.5.5
+Forwarded external response (ID: 3) to 127.0.0.1:54323
+```
+
+
+---
+
+## ? 注意事项
+
+- 需要管理员权限才能绑定 53 端口
+- 如需修改外部 DNS 地址，请修改 `common.h` 中的 `EXTERNAL_DNS_SERVER`
+- 服务器为单线程模型，每请求开启一个线程处理
+
+---
+
+## ? 建议操作流程
+
+1. 修改 `dnsrelay.txt` 添加自己的映射规则
+2. 管理员身份打开 CMD，进入构建目录
+3. 启动服务：
+   ```bash
+   dns_relay_server.exe
+   ```
+
+4. 使用 nslookup 测试
+5. 查看终端输出判断是否正常工作
